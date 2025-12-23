@@ -119,6 +119,7 @@ ham_dict = {str(b): b for b in ham_symbols}
 locals().update( ham_dict)
 
 N = 50  # Important: large N!
+Nmax = 20
 
 hBi2Se3_pulse = Hamiltonian_ttp(
     h0_k = W * (C_0 * s0 + C_2 * (k_x ** 2 + k_y ** 2) * s0
@@ -150,7 +151,7 @@ for i,ki in enumerate(ks):
     print("Progress: ", i/len(ks)*100, "%")
     params_env = {'mu_sp' : 3*tau, 'tau_sp' : tau , 'A_x': A0*4, 'A_y':0, 'A_z': 0}
     params_ham = {'k_x' : ki, 'k_y' : 0.0,}
-    solver_ki = IFS_solver(hBi2Se3_pulse, ts, params_env, params_ham, Nmax = 15)
+    solver_ki = IFS_solver(hBi2Se3_pulse, ts, params_env, params_ham, Nmax = Nmax)
     UsC= hBi2Se3_pulse.time_evolutionU(dict(**params_env, **params_ham, **par_fix), ts, steps = True)
     ct, psitsol = solver_ki.c_t(psi0band=psi0band, psi_t=True)
     ifs_hamiltonian = solver_ki.ChamL
@@ -169,44 +170,7 @@ for i,ki in enumerate(ks):
         'ts_ct': ts_ct, **params_env, **params_ham})
     
 path = '/home/how09898/phd/thesis-figures-data/floquet-sidebands/data-bise/'
-np.save(path+f'fig_Bi2Se3Lin_calphaData_sin_cb', data)
+filename = f'fig_Bi2Se3Lin_calphaData_conv_N_{N}_Nmax_{Nmax}_sin_cb.npy'
+np.save(path+filename, data)
 
-print("Data saved to ", path+f'fig_Bi2Se3Lin_calphaData_sin_cb.npy')
-print("Now running vb")
-
-
-psi0band, T = 1, 1.
-
-kF       = 0.0625428060200669
-ks       = ks[np.where(np.abs(ks) < kF)]
-
-solverL1 = []
-data     = []
-
-for i,ki in enumerate(ks):
-    print("k_x = ", ki)
-    print("Progress: ", i/len(ks)*100, "%")
-    params_env = {'mu_sp' : 3*tau, 'tau_sp' : tau , 'A_x': A0*4, 'A_y':0, 'A_z': 0}
-    params_ham = {'k_x' : ki, 'k_y' : 0.0,}
-    solver_ki = IFS_solver(hBi2Se3_pulse, ts, params_env, params_ham, Nmax = 15)
-    UsC= hBi2Se3_pulse.time_evolutionU(dict(**params_env, **params_ham, **par_fix), ts, steps = True)
-    ct, psitsol = solver_ki.c_t(psi0band=psi0band, psi_t=True)
-    ifs_hamiltonian = solver_ki.ChamL
-    ts_ct = ts[:len(ct)]
-    
-    data.append({
-        'k_x': ki * kprop,
-        'tagvec':solver_ki.tag_fqlevels(), 
-        'indexCbase' : solver_ki.indexCbase, 
-        # 'hamiltonian':ifs_hamiltonian,
-        'eL':solver_ki.eL, 
-        'ct':ct, 
-        'psit':psitsol, 
-        'psiTDSE': UsC@psitsol[0], 
-        'ts' : ts, 
-        'ts_ct': ts_ct, **params_env, **params_ham})
-    
-np.save(path+f'fig_Bi2Se3Lin_calphaData_sin_vb', data)
-
-print("Data saved to ", path+f'fig_Bi2Se3Lin_calphaData_sin_vb.npy')
-print("Done!")
+print("Data saved to ", path+filename)
